@@ -15,17 +15,11 @@
 	</properties>
 
 	<modules>
-		<module>util-spring-web</module>
 		<module>util-core</module>
 	</modules>
 
 	<dependencyManagement>
 		<dependencies>
-			<dependency>
-				<groupId>dragonboom</groupId>
-				<artifactId>util-spring-web</artifactId>
-				<version>0.0.1</version>
-			</dependency>
 			<dependency>
 				<groupId>dragonboom</groupId>
 				<artifactId>util-core</artifactId>
@@ -34,5 +28,17 @@
 		</dependencies>
 	</dependencyManagement>
 
-
+	<!-- 指定Java版本 -->
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.3.2</version>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
