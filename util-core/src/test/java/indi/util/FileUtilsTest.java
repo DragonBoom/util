@@ -1,18 +1,25 @@
 package indi.util;
 
-import java.nio.file.Path;
+import java.io.IOException;
 import java.nio.file.Paths;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 
-import indi.util.FileUtils;
-
+@ExtendWith(TestSeparateExtension.class)
 class FileUtilsTest {
 
     @Test
-    void test() {
-        Path path = Paths.get("E:", "test");
-        FileUtils.clearDirectory(path);
+    @Disabled
+    void createTest() throws IOException {
+        int count = FileUtils.createDirectoryIfNotExist(Paths.get("e:", "test", "test", "test"));
+        System.out.println(count);
+    }
+    
+    @Test
+    void moveTest() {
+        FileUtils.move2Directory(Paths.get("d:", "test"), Paths.get("e:", "/"));
     }
 
 }
