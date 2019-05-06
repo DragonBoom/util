@@ -1,5 +1,6 @@
 package indi.data.dto;
 
+import java.nio.file.Path;
 import java.util.Date;
 
 import indi.constant.DiskEntryType;
@@ -31,4 +32,6 @@ public class DirectoryEntryDTO {
     private DiskEntryType type;
     private String description;// 描述
     private String category;// 标签
+    
+    private Path realPath;
 }

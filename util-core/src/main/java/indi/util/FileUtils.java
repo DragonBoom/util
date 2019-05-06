@@ -8,8 +8,14 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import com.google.common.base.Supplier;
 
 import indi.exception.WrapperException;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -51,11 +57,15 @@ public class FileUtils {
     }
 
     /**
-     * 清空目录（删除目录所有内容，包括目录本身）
+     * 清空目录（删除目录所有内容，包括目录本身）。若给定目录不存在或不是目录，将直接返回。
      * 
      * @param directory
      */
     public static final void clearDirectory(Path directory) {
+        if (!validDirectory(directory, false)) {
+            return;
+        }
+        
         try {
             Files.walkFileTree(directory, new DeleteFileVisitor());
         } catch (IOException e) {
@@ -87,11 +97,11 @@ public class FileUtils {
 
     /**
      * 移动文件（夹），若涉及到多个文件（夹），将逐个处理
+     * 
+     * @exception IllegalArgumentException 源地址不存在或不是指向目录
      */
-    public static final void move2Directory(Path source, Path dir) {
-        if (!Files.isDirectory(dir)) {
-            throw new IllegalArgumentException(dir + "不是文件夹");
-        }
+    public static final void move(Path source, Path dir) {
+        validDirectory(source, true);
 
         FileUtils.createDirectoryIfNotExist(dir);
 
@@ -114,16 +124,11 @@ public class FileUtils {
         }
     }
 
+    @AllArgsConstructor
     private static class MoveFileVisitor extends SimpleFileVisitor<Path> {
         private Path source;
         private Path dest;
         
-        public MoveFileVisitor(Path source, Path dest) {
-            super();
-            this.source = source;
-            this.dest = dest;
-        }
-
         @Override
         public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
             log.debug("进入文件夹 {}", dir);
@@ -152,5 +157,60 @@ public class FileUtils {
             return FileVisitResult.CONTINUE;
         }
 
+    }
+    
+    /**
+     * 批量处理给定目录下的所有目录（含给定目录本身）
+     * 
+     * @exception IllegalArgumentException 源地址不存在或不是指向目录
+     */
+    public static void forEachDirectory(Path dir, Consumer<Path> function) {
+        validDirectory(dir, true);
+        try {
+            Files.walkFileTree(dir, new FunctionFileVisitor(null, function));
+        } catch (IOException e) {
+            throw new WrapperException(e);
+        }
+    }
+    
+    @AllArgsConstructor
+    private static final class FunctionFileVisitor extends SimpleFileVisitor<Path> {
+        private Consumer<Path> fileFun;
+        private Consumer<Path> dirFun;
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) {
+            Optional.ofNullable(dirFun).ifPresent(fun -> fun.accept(dir));
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            Optional.ofNullable(fileFun).ifPresent(fun -> fun.accept(file));
+            return FileVisitResult.CONTINUE;
+        }
+    }
+    
+    /**
+     * 检测给定路径是否指向有效的文件夹，若不是返回false或抛异常
+     * 
+     * @param path
+     * @param throwError 检测不通过时是否抛异常
+     * @return
+     */
+    private static boolean validDirectory(Path path, boolean throwError) {
+        if (!(Files.exists(path))) {
+            if (throwError) {
+                throw new IllegalArgumentException("给定路径不存在" + path.toString());
+            }
+            return false;
+        }
+        if (!Files.isDirectory(path)) {
+            if (throwError) {
+                throw new IllegalArgumentException("给定路径不是有效文件夹 " + path.toString());
+            }
+            return false;
+        }
+        return true;
     }
 }

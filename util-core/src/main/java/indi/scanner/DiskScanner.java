@@ -193,6 +193,7 @@ public class DiskScanner {
     }
     
     private void fillDirectoryEntryInfo(Path path, DirectoryEntryDTO entryDTO) {
+        entryDTO.setRealPath(path);
         // 读取文件基本属性
         BasicFileAttributeView fileAttributeView = 
                 Files.getFileAttributeView(path, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);

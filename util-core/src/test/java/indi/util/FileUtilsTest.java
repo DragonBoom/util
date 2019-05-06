@@ -19,7 +19,7 @@ class FileUtilsTest {
     
     @Test
     void moveTest() {
-        FileUtils.move2Directory(Paths.get("d:", "test"), Paths.get("e:", "/"));
+        FileUtils.move(Paths.get("d:", "test"), Paths.get("e:", "/"));
     }
 
 }
