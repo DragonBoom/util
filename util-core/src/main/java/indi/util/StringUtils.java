@@ -7,6 +7,10 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.Range;
+
+import lombok.extern.slf4j.Slf4j;
+@Slf4j
 public class StringUtils {
     
     /**
@@ -33,6 +37,12 @@ public class StringUtils {
         }
         return true;
     }
+    
+    public static final boolean isEnglish(Character c) {
+        Range<Character> r1 = Range.closed('a', 'z');
+        Range<Character> r2 = Range.closed('A', 'Z');
+        return r1.contains(c) || r2.contains(c);
+    }
 
     /**
      * 用于匹配字符串中除了中文外的常见的字符
@@ -58,7 +68,7 @@ public class StringUtils {
         // 有多少个字符，就应该匹配多少次；若有匹配不了这个次数，就是出现了乱码
         for (int i = 0; i < count; i++) {
             if (!matcher.find()) {
-                LoggerUtils.getLogger().info("该字符串乱码：{}", str);
+                log.info("该字符串乱码：{}", str);
                 return true;
             }
         }

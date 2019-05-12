@@ -2,15 +2,15 @@ package indi.util;
 
 import java.util.ArrayList;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.google.common.collect.Lists;
 
-import indi.util.StringUtils;
-
 class StringUtilsTest {
 
-//    @Test
+    @Test
+    @Disabled
     void test() {
         boolean result = StringUtils.isChaos("[無組] ワスレナイキミ (コ1号).rar");
         System.out.println(result);
@@ -21,10 +21,17 @@ class StringUtilsTest {
     }
     
     @Test
+    @Disabled
     void joinTest() {
         ArrayList<String> newArrayList = Lists.newArrayList();
         String result = StringUtils.join(".", newArrayList);
         System.out.println(result);
+    }
+    
+    @Test
+    void isEnTest() {
+        System.out.println(StringUtils.isEnglish('f'));
+        System.out.println(StringUtils.isEnglish('和'));
     }
 
 }

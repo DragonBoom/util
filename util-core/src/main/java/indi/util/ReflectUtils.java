@@ -49,6 +49,13 @@ public class ReflectUtils {
         return builder.build();
     }
 
+    public static String getRootLocation() {
+        URL url = Thread.currentThread().getContextClassLoader().getResource("//");
+        String fileStr = url.toString();
+        // file:/E:/Github/toolkit/target/classes/
+        return fileStr.substring(6, fileStr.length() - 1);// E:/Github/toolkit/target/classes
+    }
+
     private static String formatPackageName(String packageName) {
         if (packageName.contains(".")) {
             return packageName.replace('.', '\\');
