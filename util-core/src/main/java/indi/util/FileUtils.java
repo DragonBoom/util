@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.function.Consumer;
 
@@ -19,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class FileUtils {
 
     /**
-     * 若目录不存在，则创建目录
+     * 若目录不存在，则创建目录。若目录的上级目录也不存在，将一并创建。
      * 
      * @return 返回创建的目录数
      */
@@ -29,7 +31,7 @@ public class FileUtils {
     }
 
     /**
-     * 若目录不存在，则创建目录
+     * 若目录不存在，则创建目录。若目录的上级目录也不存在，将一并创建。
      * 
      * @return 返回创建的目录数
      */
@@ -49,6 +51,11 @@ public class FileUtils {
                 throw new RuntimeException(e);
             }
             count++;
+        } else {
+            // 校验给定路径是否指向文件
+            if (!Files.isDirectory(path)) {
+                throw new IllegalArgumentException(path + " 指向文件");
+            }
         }
         return count;
     }
@@ -209,5 +216,41 @@ public class FileUtils {
             return false;
         }
         return true;
+    }
+    
+    /**
+     * 从给定文件夹开始，查找文件夹。将基于宽度/广度优先(BFS Breadth-First-Search)进行搜索。
+     * 
+     * @param path 起始路径
+     * @param directoryName 所查找的文件夹名
+     */
+    @SuppressWarnings("unchecked")
+    public static final Path findDirectory(Path path, String directoryName) {
+        validDirectory(path, true);
+        LinkedList<Path> list = new LinkedList<>();
+        LinkedList<Path> nextList = new LinkedList<>();
+        list.add(path);
+        while (list.size() > 0) {
+            try {
+                Iterator<Path> iterator = list.iterator();
+                while (iterator.hasNext()) {
+                    Path parentPath = iterator.next();
+                    
+                    for (Path subPath : Files.newDirectoryStream(parentPath, Files::isDirectory)) {
+                        if (subPath.getFileName().toString().equals(directoryName)) {
+                            return subPath;
+                        }
+                        nextList.add(subPath);
+                    }
+                    iterator.remove();
+                }
+                list = (LinkedList<Path>) nextList.clone();
+                nextList.clear();
+            } catch (IOException e) {
+                throw new WrapperException(e);
+            }
+        }
+        // till not found...
+        return null;
     }
 }

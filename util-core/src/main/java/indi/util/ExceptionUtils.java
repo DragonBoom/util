@@ -26,7 +26,7 @@ public class ExceptionUtils {
     }
 
     /**
-     * 将异常转化为RestResult，将对参见的异常进行翻译
+     * 将异常转化为RestResult。将对常见的异常进行翻译
      */
     public static final RestResult<?> convert(Throwable e) {
         Throwable firstCause = findFirstCause(e);
