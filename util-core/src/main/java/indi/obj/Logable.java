@@ -1,4 +1,4 @@
-package indi.util;
+package indi.obj;
 
 /**
  * 类似toString，实现该接口的对象能够打印日志
@@ -6,7 +6,7 @@ package indi.util;
  * @author DragonBoom
  *
  */
-public interface Log {
+public interface Logable {
 
     public void log();
 }

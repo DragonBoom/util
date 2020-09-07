@@ -1,5 +1,7 @@
 package indi.data.dto;
 
+import java.util.Date;
+
 import indi.constant.DiskEntryType;
 import lombok.Getter;
 import lombok.Setter;
@@ -13,5 +15,7 @@ public class FileDTO extends DirectoryEntryDTO {
     private String storeType;// 存储方式（具体类型见 indi.constant.StoreType）
     private DiskEntryType type = DiskEntryType.FILE;
     private byte[] content;// 文件内容，字节数组格式
-    
+    private Date createTime;
+    private Date lastAccessTime;
+    private Date lastModifiedTime;
 }

@@ -3,6 +3,7 @@ package indi.util;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import indi.exception.ExceptionUtils;
 import indi.exception.WrapperException;
 
 class ExceptionUtilsTest {

@@ -84,5 +84,10 @@
 			<version>4.12</version>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>io.lettuce</groupId>
+			<artifactId>lettuce-core</artifactId>
+			<version>5.1.6.RELEASE</version>
+		</dependency>
 	</dependencies>
 </project>

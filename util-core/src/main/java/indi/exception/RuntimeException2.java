@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 在原RuntimeException的基础上加了日志
  * 
- * 但日志记录的触发位置存在问题...
+ * <p>但日志记录的触发位置存在问题，暂不使用
  */
 @Slf4j
 public class RuntimeException2 extends RuntimeException {

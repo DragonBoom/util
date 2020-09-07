@@ -1,4 +1,4 @@
-package indi.util;
+package indi.bean;
 
 import static java.util.Locale.ENGLISH;
 
@@ -14,8 +14,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import indi.collection.CollectionUtils;
 import indi.exception.WrapperException;
-import lombok.Data;
+import lombok.AllArgsConstructor;
 
 public class BeanUtils {
 
@@ -111,7 +112,7 @@ public class BeanUtils {
 	public static final Object invokeSetter(PropertyDescriptor propertyDescriptor, Object bean, Object value) {
 	    // 调用setter方法
 	    Method setter = propertyDescriptor.getWriteMethod();
-	    
+
 	    if (setter == null) {
 	        return null;
 	    }
@@ -124,35 +125,84 @@ public class BeanUtils {
 	    }
 	}
 	
+	public static final void copyProperties(Object sourceBean, Object targetBean, String... ignoreProperties) {
+	    try {
+            BeanInfo sourceBeanInfo = Introspector.getBeanInfo(sourceBean.getClass());
+            PropertyDescriptor[] sourcePDs = sourceBeanInfo.getPropertyDescriptors();
+
+            BeanInfo targetBeanInfo = Introspector.getBeanInfo(sourceBean.getClass());
+            PropertyDescriptor[] targetPDs = targetBeanInfo.getPropertyDescriptors();
+            
+            CollectionUtils
+                    .collectMap(sourcePDs, targetPDs, (sourcePD, targetPD) -> {
+                        String name = sourcePD.getName();
+                        return Arrays.binarySearch(ignoreProperties, name) >= 0 && name.equals(targetPD.getName());
+                    })
+                    .forEach((sourcePD, targetPD) -> {
+                        Object value = invokeGetter(sourcePD, sourceBean);
+                        invokeSetter(targetPD, targetBean, value);
+                    });
+        } catch (IntrospectionException e) {
+            throw new WrapperException(e);
+        }
+	}
+	
+	/**
+	 * 获取包含了getter与setter方法的PropertyDescriptor
+	 * 
+	 * @param classes
+	 * @param propertyName
+	 * @return
+	 */
+	public static PropertyDescriptor getFullPropertyDescriptor(Class<?> classes, String propertyName) {
+	    try {
+            return new PropertyDescriptor(propertyName, classes, 
+                    "is" + capitalize(propertyName),// 根据源码：这里若用is前缀，则当找不到该方法时还会尝试获取一次get前缀的方法 ovO
+                    "set" +  capitalize(propertyName));
+        } catch (IntrospectionException e) {
+            throw new WrapperException(e);
+        }
+	}
+	
+	/**
+	 * 首字母大写，用于拼接方法名
+	 * 
+	 * @param name bean的属性
+	 */
+	private static String capitalize(String name) {
+        if (name == null || name.length() == 0) {
+            return name;
+        }
+        return name.substring(0, 1).toUpperCase(ENGLISH) + name.substring(1);
+    }
+	
 	/**
 	 * 利用反射，复制两个bean的属性
 	 * 
 	 * <p>Spring/Apache也提供了类似的工具，但还是考虑自己实现一个更灵活的轮子
 	 */
-	public static final BeanCopyPropertiesHandler copyProperties(Object sourceBean, Object targetBean) {
-	    return new BeanCopyPropertiesHandler(sourceBean, targetBean);
+	public static final <T, K> CopyPropertyBuilder<T, K> copySelectedProperties(T sourceBean, K targetBean) {
+	    return new CopyPropertyBuilder<T, K>(sourceBean, targetBean);
 	}
 	
-	@Data
-	public static class BeanCopyPropertiesHandler {
-	    private Object sourceBean;
-	    private Object targetBean;
-	    
-	    public BeanCopyPropertiesHandler(Object sourceBean, Object targetBean) {
-	        this.sourceBean = sourceBean;
-	        this.targetBean = targetBean;
-	    }
+	@AllArgsConstructor
+	public static class CopyPropertyBuilder<T, K> {
+	    private T sourceBean;
+	    private K targetBean;
 	    
 	    /**
 	     * 复制属性
 	     */
-        public <T, U> BeanCopyPropertiesHandler copy(String sourceProp, String destProp, Function<T, U> converter) {
+        public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp, Function<Object, Object> converter) {
             PropertyDescriptor sourcePropDescriptor;
             PropertyDescriptor targetPropDescriptor;
             try {
+                // build getter propertyDescriptor
                 sourcePropDescriptor = new PropertyDescriptor(sourceProp, sourceBean.getClass(), 
                         "is" + capitalize(sourceProp),// 根据源码：这里若用is前缀，则当找不到该方法时还会尝试获取一次get前缀的方法 ovO
                         null);
+
+                // build setter propertyDescriptor
                 targetPropDescriptor = new PropertyDescriptor(destProp, targetBean.getClass(), null, 
                         "set" + capitalize(destProp));
             } catch (IntrospectionException e) {
@@ -164,7 +214,7 @@ public class BeanUtils {
 
             // 转换属性
             if (converter != null) {
-                value = converter.apply((T) value);
+                value = converter.apply(value);
             }
 
             // 设置属性
@@ -172,26 +222,37 @@ public class BeanUtils {
 
             return this;
         }
-        
-        public static String capitalize(String name) {
-            if (name == null || name.length() == 0) {
-                return name;
-            }
-            return name.substring(0, 1).toUpperCase(ENGLISH) + name.substring(1);
-        }
 	    
 	    /**
 	     * 复制属性，两个bean的属性类型必须一致
 	     */
-	    public BeanCopyPropertiesHandler copy(String prop) {
+	    public CopyPropertyBuilder<T, K> copy(String prop) {
 	        return this.copy(prop, prop, null);
 	    }
 	    
 	    /**
 	     * 复制属性，两个bean的属性类型必须一致
 	     */
-	    public BeanCopyPropertiesHandler copy(String sourceProp, String destProp) {
+	    public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp) {
 	        return this.copy(sourceProp, destProp, null);
+	    }
+
+	}
+	
+	public static SetPropertyBuilder setProperties(Object bean) {
+	    return new SetPropertyBuilder(bean);
+	}
+	
+	@AllArgsConstructor
+    public static final class SetPropertyBuilder {
+	    private Object bean;
+	    
+	    public SetPropertyBuilder set(String propertyName, Object propertyValue) {
+	        PropertyDescriptor propertyDescriptor = getFullPropertyDescriptor(bean.getClass(), propertyName);
+
+	        invokeSetter(propertyDescriptor, bean, propertyValue);
+
+	        return this;
 	    }
 	}
 	
@@ -208,4 +269,35 @@ public class BeanUtils {
             invokeSetter(propertyDescriptor, bean, null);
         }
 	}
+	
+	/**
+	 * 性能可能较差
+	 * 
+	 * @param obj
+	 * @param propertyName
+	 * @return
+	 * @author DragonBoom
+	 * @since 2020.09.04
+	 */
+	public static <T> T getProperty(Object obj, String propertyName) {
+	    PropertyDescriptor propertyDescriptor = BeanUtils.getFullPropertyDescriptor(obj.getClass(), propertyName);
+	    return (T) BeanUtils.invokeGetter(propertyDescriptor, obj);
+	}
+	
+	/**
+	 * 性能可能较差
+	 * 
+	 * @param obj
+	 * @param propertyName
+	 * @param value
+	 * @return
+	 * @author DragonBoom
+	 * @since 2020.09.04
+	 */
+	public static void setProperty(Object obj, String propertyName, Object value) {
+	    PropertyDescriptor propertyDescriptor = BeanUtils.getFullPropertyDescriptor(obj.getClass(), propertyName);
+	    BeanUtils.invokeSetter(propertyDescriptor, obj, value);
+	}
+	
+	
 }

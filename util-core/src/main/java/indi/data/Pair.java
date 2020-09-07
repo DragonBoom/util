@@ -12,14 +12,11 @@ import lombok.ToString;
 @ToString
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Three<T, R, K> {
+public class Pair<T, K> {
     private T first;
-    private R second;
-    private K third;
+    private K second;
     
-    private Three() {}
-
-    public static final <T, R, K> Three<T, R, K> of(T first, R second, K third) {
-        return new Three<>(first, second, third);
+    public static final <T, K> Pair<T, K> of(T first, K second) {
+        return new Pair<>(first, second);
     }
 }

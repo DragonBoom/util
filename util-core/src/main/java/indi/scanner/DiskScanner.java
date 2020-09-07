@@ -76,7 +76,7 @@ public class DiskScanner {
         // 读取文件基本属性
         BasicFileAttributeView fileAttributeView = 
                 Files.getFileAttributeView(path, BasicFileAttributeView.class, LinkOption.NOFOLLOW_LINKS);
-        BasicFileAttributes attributes = null;
+        final BasicFileAttributes attributes;
         try {
             attributes = fileAttributeView.readAttributes();
         } catch (IOException e) {
@@ -86,7 +86,7 @@ public class DiskScanner {
         // 2. 根据文件信息，构建FileDTO对象
         FileDTO fileDTO = scanDirectoryEntry(path, FileDTO.class).get();
         
-        // 获取文件内容
+        // 文件内容
         if (isScanFileContent) {
             byte[] bytes = null;
             try {
@@ -95,14 +95,25 @@ public class DiskScanner {
                 throw new WrapperException(e);
             }
             fileDTO.setContent(bytes);
-            fileDTO.setSize(attributes.size());
-        } else {
-            try {
-                fileDTO.setSize(Files.size(path));
-            } catch (IOException e) {
-                throw new WrapperException(e);
-            }
         }
+            
+        fileDTO.setSize(attributes.size());// 文件大小
+        // 创建时间
+        Optional.ofNullable(attributes.creationTime())
+                .map(FileTime::toMillis)
+                .map(Date::new)
+                .ifPresent(fileDTO::setCreateTime);
+        // 最后访问时间
+        Optional.ofNullable(attributes.lastAccessTime())
+                .map(FileTime::toMillis)
+                .map(Date::new)
+                .ifPresent(fileDTO::setLastAccessTime);
+        //最后修改时间
+        Optional.ofNullable(attributes.lastModifiedTime())
+                .map(FileTime::toMillis)
+                .map(Date::new)
+                .ifPresent(fileDTO::setLastModifiedTime);
+        
         
         fileDTO.setStoreType(StoreType.DISK);
         

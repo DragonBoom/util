@@ -7,7 +7,10 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
-import indi.data.RestResult;
+import indi.bean.BeanUtils;
+import indi.data.Result;
+import indi.data.Results;
+import indi.test.TestSeparateExtension;
 
 @ExtendWith(TestSeparateExtension.class)
 class BeanUtilsTest {
@@ -15,29 +18,42 @@ class BeanUtilsTest {
 	@Test
 	@Disabled
 	void createMapTest() {
-		RestResult<String> success = RestResult.asSuccess("ff");
+		Result<String> success = Results.success("ff");
 		
 		Map<String, Object> map = BeanUtils.createMap(success, true);
 		
 		System.out.println(map);
 	}
 	
-	@Test
-	@Disabled
-	void copyPropertiesTest() {
-	    RestResult<String> result1 = RestResult.asSuccess("hello");
-	    RestResult<String> result2 = RestResult.asSuccess("bad");
-	    BeanUtils.copyProperties(result1, result2).copy("content");
-	    
-	    Assertions.assertEquals("hello", result2.getContent());
-	    System.out.println(result2.getContent());
+	Result<String> result1 = Results.success("hello");
+	Result<String> result2 = Results.error("bad");
+	
+	private void showResultBrother() {
+	    System.out.println(new StringBuilder("--\n").append(result1).append("\n   ").append(result2).toString());
 	}
 	
 	@Test
+	@Disabled
+	void copyPropertiesTest() {
+	    BeanUtils.copySelectedProperties(result1, result2).copy("content");
+	    
+	    Assertions.assertEquals("hello", result2.getContent());
+	    showResultBrother();
+	}
+	
+	@Test
+	@Disabled
 	void cleanupTest() {
-	    RestResult<String> result1 = RestResult.asSuccess("hello");
+	    Result<String> result1 = Results.success("hello");
 	    BeanUtils.cleanup(result1);
 	    System.out.println(result1);
+	}
+	
+	@Test
+	void copyAllPropertiesTest() {
+	    showResultBrother();
+	    BeanUtils.copyProperties(result1, result2);
+	    showResultBrother();
 	}
 
 }

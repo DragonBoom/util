@@ -1,4 +1,4 @@
-package indi.util;
+package indi.obj;
 
 public interface Cleanupable {
 

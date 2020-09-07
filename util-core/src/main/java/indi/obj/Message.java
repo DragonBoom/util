@@ -1,4 +1,4 @@
-package indi.util;
+package indi.obj;
 
 /**
  * 类似于toString<br>

@@ -7,6 +7,8 @@ import java.util.StringJoiner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.base.Ascii;
+import com.google.common.base.CaseFormat;
 import com.google.common.collect.Range;
 
 import lombok.extern.slf4j.Slf4j;
@@ -89,4 +91,57 @@ public class StringUtils {
         });
         return joiner.toString();
     }
+    
+    /**
+     * 将给定字符串转化为小写下划线式写法（如：lower_underscore）。
+     * 
+     * @param str
+     * @return
+     */
+    public static String toLowerUnderscore(String str) {
+        // 若给定字符串已包含下划线，则转化为小写后直接返回。
+        if (str.contains("_")) {
+            return str.toLowerCase();
+        }
+        // 若给定字符串第一个字符为大写，则转化为小写后直接返回。
+        if (str.length() > 0 && Ascii.isUpperCase(str.charAt(0))) {
+            return str.toLowerCase();
+        }
+        // 将给定字符串视为小写驼峰式写法，利用guava的工具类进行转换
+        return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_UNDERSCORE, str);
+    }
+    
+    /**
+     * 由于util包没有Spring环境，不能用Spring的StringUtils的isEmpty方法，只能自己造一个轮子
+     * 
+     * @param obj
+     * @return
+     */
+    public static boolean isEmpty(Object obj) {
+        return obj == null || obj.equals("");
+    }
+    
+    private static final String[] EXP_SP = 
+        { "\\", "$", "(", ")", "*", "+", ".", "[", "]", "?", "^", "{", "}", "|" };
+    
+    /**
+     * 转义正则特殊字符 （$()*+.[]?\^{},|）
+     * 
+     * <p>https://blog.csdn.net/bbirdsky/article/details/45368709
+     * 
+     * @param keyword
+     * @return
+     */
+    public static String escapeExprSpecialWord(String keyword) {
+        if (!StringUtils.isEmpty(keyword)) {
+            for (String key : EXP_SP) {
+                if (keyword.contains(key)) {
+                    keyword = keyword.replace(key, "\\" + key);
+                }
+            }
+        }
+        return keyword;
+    }
+
+
 }

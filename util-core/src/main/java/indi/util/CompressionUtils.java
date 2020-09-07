@@ -8,15 +8,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import javax.annotation.Nullable;
+
 import indi.exception.WrapperException;
+import indi.io.IOUtils;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
 import net.lingala.zip4j.model.UnzipParameters;
 import net.lingala.zip4j.model.ZipParameters;
+import net.lingala.zip4j.util.Zip4jConstants;
 
 @Slf4j
 public class CompressionUtils {
@@ -30,6 +35,7 @@ public class CompressionUtils {
     }
 
     /**
+     * 解压rar压缩文件（只支持rar格式的文件；后缀可以不是.rar）
      * 
      * @param sourcePath
      * @param destPath
@@ -44,24 +50,25 @@ public class CompressionUtils {
                 .append(" -o-") // 覆盖已存在项目
                 .append(" -isnd") // 禁用声音
                 .append(" \"").append(sourcePath).append("\" \"").append(destPath).append("\""); // 设置路径
-        System.out.println(sb);
+        log.debug("Process command: {}", sb);
         Process exec = null;
         try {
             exec = Runtime.getRuntime().exec(sb.toString());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        // 若解压出错
+        // 若解压出错，处理错误信息流
         try {
             if (exec.getErrorStream().read() != -1) {
-                String errorReason = StreamUtils.toString(exec.getErrorStream(), "gbk");
+                String errorReason = IOUtils.toString(exec.getErrorStream(), "gbk");
                 if (enableErrorLog) {
                     log.error(errorReason);
                 }
+                // 若错误信息中包含密码二字，则视为密码错误
                 if (errorReason.contains("密码")) {
                     return ResultTypes.PasswordError;
                 }
-                System.out.println(exec.exitValue());
+                log.info("exitValue: {}", exec.exitValue());
                
                 return ResultTypes.Others;
             }
@@ -70,8 +77,8 @@ public class CompressionUtils {
         }
 
         if (enableLog) {
-            System.out.println(exec.getErrorStream());
-            System.out.println(StreamUtils.toString(exec.getInputStream(), "gbk"));
+            log.info("{}", exec.getErrorStream());
+            log.info("{}", IOUtils.toString(exec.getInputStream(), "gbk"));
         }
         return ResultTypes.Success;
     }
@@ -107,11 +114,15 @@ public class CompressionUtils {
     /**
      * 将源路径对应的文件/目录压缩为zip文件，并写入到给定路径
      * 
+     * <p>暂时仅支持单一目录的压缩
+     * 
      * @param sourcePathStr 源路径
      * @param destZipPathStr 目标压缩文件路径
-     * @param overwrite 若目标文件已存在，是否进行覆盖；若否，则但目标文件已存在时将会跑异常
+     * @param pwd 密码，可为空表示无密码
+     * @param compressionLevel 压缩级别，可选范围 0-9，可为空表示取默认值
+     * @param overwrite 若目标文件已存在，是否进行覆盖；若否，则当目标文件已存在时将会跑异常
      */
-    public static final ZipFile packZip(String sourcePathStr, String destZipPathStr, boolean overwrite) {
+    public static final ZipFile packZip(String sourcePathStr, String destZipPathStr, @Nullable String pwd, Integer compressionLevel, boolean overwrite) {
         Path sourcePath = Paths.get(sourcePathStr);
         Path destZipPath = Paths.get(destZipPathStr);
         
@@ -133,6 +144,19 @@ public class CompressionUtils {
             }
         }
         
+        ZipParameters zipParameters = new ZipParameters();// 压缩参数
+        // 压缩密码（用字符串存放密码存在被解析内存从而获取到的隐患。。。）
+        Optional.ofNullable(pwd).ifPresent(args -> {
+            zipParameters.setEncryptFiles(true);
+            zipParameters.setEncryptionMethod(Zip4jConstants.ENC_METHOD_AES);
+            zipParameters.setAesKeyStrength(Zip4jConstants.AES_STRENGTH_256);
+            zipParameters.setPassword(pwd);
+        });
+        // 压缩方法 取默认的 Deflate
+        
+        // 压缩级别，可选范围为0-9
+        Optional.ofNullable(compressionLevel).ifPresent(args -> zipParameters.setCompressionLevel(compressionLevel));
+        
         try {
             ZipFile zipFile = new ZipFile(destZipPathStr);
             if (Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
@@ -148,14 +172,14 @@ public class CompressionUtils {
                 ArrayList<File> fileArrayList = new ArrayList<>();
                 fileArrayList.addAll(files);
                 
-                log.debug("将文件夹压缩为ZIP文件: {} {}", destZipPathStr, fileArrayList);
+                log.debug("将文件夹压缩为ZIP文件: {} , 文件数={}", destZipPathStr, fileArrayList.size());
                 
-                zipFile.createZipFile(fileArrayList, new ZipParameters());
+                zipFile.createZipFile(fileArrayList, zipParameters);
             } else {
                 log.debug("将文件压缩为ZIP文件: {}", destZipPathStr);
                 
                 // 若源路径不是目录
-                zipFile.createZipFile(sourcePath.toFile(), new ZipParameters());
+                zipFile.createZipFile(sourcePath.toFile(), zipParameters);
             }
             return zipFile;
         } catch (ZipException e) {
@@ -172,7 +196,7 @@ public class CompressionUtils {
      * @return
      */
     public static final ZipFile packZip2Dir(String sourcePath, String targetFileName, String destDir, boolean overwrite) {
-        return packZip(sourcePath, Paths.get(destDir, targetFileName).toString(), overwrite);
+        return packZip(sourcePath, Paths.get(destDir, targetFileName).toString(), null, null, overwrite);
     }
     
     /**

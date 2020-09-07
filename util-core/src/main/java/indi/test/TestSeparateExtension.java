@@ -1,7 +1,6 @@
-package indi.util;
+package indi.test;
 
 import java.util.Date;
-import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
@@ -10,15 +9,16 @@ import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 /**
- * 引入该插件以为每个单元测试添加分隔符
+ * 用@ExtendWith引入该插件以为每个单元测试添加分隔符
+ * 
  * @author DragonBoom
  *
  */
 public class TestSeparateExtension
         implements BeforeTestExecutionCallback, AfterTestExecutionCallback, BeforeAllCallback, AfterAllCallback {
     private static final String SEPARATOR = "---------------------------------";
-    private static final String BEGIN_ALL = "begin";
-    private static final String AFTER_ALL = "over";
+    private static final String BEGIN_ALL = "begin test";
+    private static final String AFTER_ALL = "over test";
     private ThreadLocal<Date> beginDateThreadLocal = new ThreadLocal<>();
 
     @Override

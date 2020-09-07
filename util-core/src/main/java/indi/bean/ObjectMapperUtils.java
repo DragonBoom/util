@@ -1,4 +1,4 @@
-package indi.util;
+package indi.bean;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
