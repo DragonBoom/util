@@ -139,4 +139,19 @@ public class CollectionUtils {
         }
         return Lists.newArrayList(result);
     }
+    
+    /**
+     * 当且仅当集合只有一个元素时，返回该元素，<b>否则抛IllegalArgumentException</b>
+     * 
+     * @param list
+     * @author DragonBoom
+     * @since 2020.09.09
+     */
+    public static <T> T getSingle(List<T> list) {
+        int size = list.size();
+        if (size != 1) {
+            throw new IllegalArgumentException("集合不是只有一个元素, size=" + size);
+        }
+        return list.get(0);
+    }
 }

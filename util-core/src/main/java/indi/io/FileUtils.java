@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableSet;
 import indi.exception.WrapperException;
 import indi.util.StringUtils;
 import lombok.AllArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -120,6 +121,7 @@ public class FileUtils {
         while (!stack.isEmpty()) {
             try {
                 Files.createDirectories(stack.pollFirst());
+                count++;
             } catch (IOException e) {
                 throw new WrapperException(e);
             }
@@ -532,6 +534,7 @@ public class FileUtils {
      * @param allowEmptyDir 是否允许有空的子目录
      * @return
      */
+    @SneakyThrows
     public static boolean isEmptyDir(Path dir, boolean allowEmptyDir) {
         if (!validDirectory(dir, false)) {
             return false;
@@ -545,8 +548,6 @@ public class FileUtils {
                 // 递归检查是否没有条目
                 return !fStream.filter(p -> !p.equals(dir)).findFirst().isPresent(); 
             }
-        } catch (IOException e) {
-            throw new WrapperException(e);
         }
     }
     

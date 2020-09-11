@@ -11,7 +11,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import indi.collection.CollectionUtils;
@@ -193,7 +195,8 @@ public class BeanUtils {
 	    /**
 	     * 复制属性
 	     */
-        public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp, Function<Object, Object> converter) {
+        public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp, Function<Object, Object> converter, 
+                Predicate<Object> sourcePredicate) {
             PropertyDescriptor sourcePropDescriptor;
             PropertyDescriptor targetPropDescriptor;
             try {
@@ -209,15 +212,23 @@ public class BeanUtils {
                 throw new WrapperException(e);
             }
 
-            // 获取属性
+            // 获取源属性
             Object value = invokeGetter(sourcePropDescriptor, sourceBean);
-
-            // 转换属性
+            
+            // 转换源属性
             if (converter != null) {
                 value = converter.apply(value);
             }
+            
+            // 校验是否需要复制
+            if (sourcePredicate != null) {
+                if (!sourcePredicate.test(value)) {
+                    // 校验不通过，不复制
+                    return this;
+                }
+            }
 
-            // 设置属性
+            // 设置到目标属性
             invokeSetter(targetPropDescriptor, targetBean, value);
 
             return this;
@@ -227,14 +238,27 @@ public class BeanUtils {
 	     * 复制属性，两个bean的属性类型必须一致
 	     */
 	    public CopyPropertyBuilder<T, K> copy(String prop) {
-	        return this.copy(prop, prop, null);
+	        return this.copy(prop, prop, null, null);
+	    }
+	    
+	    /**
+	     * 只复制不为空的源属性
+	     * 
+	     * @param prop
+	     * @param sourcePredicate
+	     * @return
+	     * @author DragonBoom
+	     * @since 2020.09.09
+	     */
+	    public CopyPropertyBuilder<T, K> copyExist(String prop) {
+	        return this.copy(prop, prop, null, Objects::nonNull);
 	    }
 	    
 	    /**
 	     * 复制属性，两个bean的属性类型必须一致
 	     */
 	    public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp) {
-	        return this.copy(sourceProp, destProp, null);
+	        return this.copy(sourceProp, destProp, null, null);
 	    }
 
 	}
