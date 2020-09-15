@@ -86,9 +86,7 @@ public class StringUtils {
         Objects.requireNonNull(elements);
         
         StringJoiner joiner = new StringJoiner(delimiter);
-        elements.forEach(element -> {
-            joiner.add(element.toString());
-        });
+        elements.forEach(element -> joiner.add(element.toString()));
         return joiner.toString();
     }
     

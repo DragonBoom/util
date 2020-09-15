@@ -17,9 +17,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
 
 import indi.bean.ObjectMapperUtils;
 
@@ -43,7 +41,8 @@ public class Base64PersistCenter extends PersistCenter {
     }
     
     /** key -> base64 */
-    private TypeReference<ConcurrentHashMap<String, String>> STRING_MAP_TYPE_REF = new TypeReference<ConcurrentHashMap<String, String>>() {};
+    private static final TypeReference<ConcurrentHashMap<String, String>> STRING_MAP_TYPE_REF = 
+            new TypeReference<ConcurrentHashMap<String, String>>() {};
     
     @Override
     protected void writeFile(Map<String, Object> newMap, Map<String, Object> oldMap) throws Exception {
@@ -75,7 +74,7 @@ public class Base64PersistCenter extends PersistCenter {
      * @author DragonBoom
      * @since 2020.09.04
      */
-    protected Map<String, String> initByFile() throws JsonParseException, JsonMappingException, IOException {
+    protected Map<String, String> initByFile() throws IOException {
         if (!Files.exists(persistFilePath)) {
             return null;
         }

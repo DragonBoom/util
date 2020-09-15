@@ -11,7 +11,10 @@ import javax.annotation.Nullable;
 import com.google.common.io.ByteStreams;
 
 import indi.exception.RuntimeException2;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class IOUtils {
 
     public static final byte[] readBytes(ByteBuffer byteBuffer) {

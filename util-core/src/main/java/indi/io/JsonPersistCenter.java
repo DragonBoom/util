@@ -3,12 +3,13 @@
  */
 package indi.io;
 
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -22,7 +23,8 @@ import indi.bean.ObjectMapperUtils;
  * @since 2020.09.04
  */
 public class JsonPersistCenter extends PersistCenter{
-    private TypeReference<ConcurrentHashMap<String, Object>> MAP_TYPE_REF = new TypeReference<ConcurrentHashMap<String, Object>>() {};
+    private static final TypeReference<ConcurrentHashMap<String, Object>> MAP_TYPE_REF = 
+            new TypeReference<ConcurrentHashMap<String, Object>>() {};
 
     public JsonPersistCenter(Path homePath, Object obj, String... propertyNames) {
         super(homePath, obj, propertyNames);
@@ -33,7 +35,7 @@ public class JsonPersistCenter extends PersistCenter{
     }
 
     @Override
-    protected void writeFile(Map<String, Object> newMap, Map<String, Object> oldMap) throws Exception {
+    protected void writeFile(@Nonnull Map<String, Object> newMap, @Nonnull Map<String, Object> oldMap) throws Exception {
         // 合并Map
         oldMap.putAll(newMap);
         

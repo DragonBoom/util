@@ -11,6 +11,8 @@ import java.util.zip.CRC32;
 
 import indi.exception.WrapperException;
 import indi.io.FileUtils;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 /**
  * 校验用工具类
@@ -18,6 +20,7 @@ import indi.io.FileUtils;
  * @author wzh
  * @since 2020.09.05
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class CheckUtils {
 
     /**

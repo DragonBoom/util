@@ -1,7 +1,9 @@
 package indi.io;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
@@ -11,14 +13,17 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
@@ -29,13 +34,16 @@ import com.google.common.collect.ImmutableSet;
 
 import indi.exception.WrapperException;
 import indi.util.StringUtils;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class FileUtils {
-    
+     
     /**
      * 清空文件
      * 
@@ -43,8 +51,8 @@ public class FileUtils {
      * @return
      */
     public static final Boolean emptyFile(Path path) {
+        boolean isCreatedNew = createEmptyFileIfNotExist(path);
         
-        Boolean isCreatedNew = createEmptyFileIfNotExist(path);
         if (isCreatedNew) {
             // 已创建新的空文件
             return true;
@@ -58,7 +66,7 @@ public class FileUtils {
             }
             
             // 用空字符串覆盖文件内容
-            Files.write(path, new String().getBytes(), 
+            Files.write(path, "".getBytes(), 
                     StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
             return true;
         } catch (IOException e) {
@@ -145,7 +153,7 @@ public class FileUtils {
         } catch (IOException e) {
             throw new WrapperException(e);
         }
-    };
+    }
 
     /**
      * 清空目录。若给定目录不存在或不是目录，将直接返回。
@@ -161,7 +169,7 @@ public class FileUtils {
         try {
             Files.walkFileTree(directory, new DeleteFileVisitor(directory, deleteSelf));
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new WrapperException(e);
         }
     }
 
@@ -381,7 +389,7 @@ public class FileUtils {
         LinkedList<Path> list = new LinkedList<>();
         LinkedList<Path> nextList = new LinkedList<>();
         list.add(path);
-        while (list.size() > 0) {
+        while (list.isEmpty()) {
             try {
                 Iterator<Path> iterator = list.iterator();
                 while (iterator.hasNext()) {
@@ -421,23 +429,28 @@ public class FileUtils {
     
     private static final String TMP_PREFIX = "FileUtils-";// len must > 3 
     
+    public static File createTmpFile(String tmpDir) {
+        return FileUtils.createTmpFile(Paths.get(tmpDir));
+    }
+    
     /**
      * 在系统指定目录下生成临时文件。对返回的File对象，可调用其toPath方法转化为Path对象（不提供仅将File转化为Path的轮子，避免使接口复杂化）
      * 
-     * @param tmpDirPathStr 生成临时文件的目录，可为空，为空时取系统默认的临时文件夹。建议与临时文件的最终存储路径位于同一个磁盘，从而提高移动的效率
+     * @param tmpDir 生成临时文件的目录，可为空，为空时取系统默认的临时文件夹。建议与临时文件的最终存储路径位于同一个磁盘，从而提高移动的效率
      * @return
      */
-    public static File createTmpFile(String tmpDirPathStr) {
-        if (!StringUtils.isEmpty(tmpDirPathStr)) {
-            FileUtils.createDirectoryIfNotExist(Paths.get(tmpDirPathStr));
-        }
+    public static File createTmpFile(Path tmpDir) {
+        FileUtils.createDirectoryIfNotExist(tmpDir);
         // 利用Java自带的api实现
         try {
-            return File.createTempFile(TMP_PREFIX, null, new File(tmpDirPathStr));
+            return Files.createTempFile(tmpDir, TMP_PREFIX, null).toFile();
         } catch (IOException e) {
             throw new WrapperException(e);
         }
     }
+    
+    private static final Pattern FILE_EXTENSION_PATTERN = 
+            Pattern.compile("(?<=\\.)[^\\.]+$");
     
     /**
      * 获取文件的后缀
@@ -445,20 +458,24 @@ public class FileUtils {
      * @param fileName 文件路径或文件名
      * @return 后缀字符串。文件没有后缀时返回null。
      */
-    public static String getSuffix(String fileName) {
-        int i = fileName.lastIndexOf('.');
-        return i == -1 ? null : fileName.substring(i + 1);
+    public static String getExtension(String fileName) {
+        Matcher matcher = FILE_EXTENSION_PATTERN.matcher(fileName);
+        return matcher.find() ? matcher.group() : null;
     }
     
+    // java 不支持不包含的无限匹配，需要将+替换为{1,6}，即能匹配的后缀长度有限，现设为6
+    // 这里用?设置了非贪婪匹配
+    private static final Pattern FILE_NAME_PATTERN = 
+            Pattern.compile("(?<=\\\\|/|^)[^\\\\/]+?(?=\\.[^\\.]{1,6}$|$)");
+    
     /**
-     * 获取文件名（不含后缀）
+     * 获取文件名（不含后缀）。
      * 
      * @param path 文件路径或文件名
-     * @return 文件名
+     * @return 文件名；若给定路径不是指向文件返回null
      */
     public static String getFileName(String path) {
-        // 基于正则实现
-        Matcher matcher = Pattern.compile("(?<=(\\\\|/|^))[^(\\\\|/)]+?(?=(\\.[^(\\\\|/)]{1,9}|$))").matcher(path);
+        Matcher matcher = FILE_NAME_PATTERN.matcher(path);
         return matcher.find() ? matcher.group() : null;
     }
     
@@ -484,7 +501,7 @@ public class FileUtils {
      * @return
      */
     public static Boolean isImage(Path path) {
-        return Optional.ofNullable(getSuffix(path.toString()))
+        return Optional.ofNullable(getExtension(path.toString()))
                 .map(suffix -> imageSuffixes.contains(suffix.toLowerCase()))
                 .orElse(false);
     }
@@ -494,7 +511,7 @@ public class FileUtils {
     /**
      * 复制Channel的内容，将不会关闭任何通道！将从source的起始位置开始复制(position)，复制到target的其实位置(position)。
      * 
-     * 该方法用于需要手动操作流复制的场景，可根据需要进行修改（以增加参数为主）
+     * 该方法用于需要手动操作流复制的场景，可根据需要修改该方法（以增加参数为主）
      * 
      * @param source source
      * @param target target
@@ -543,10 +560,10 @@ public class FileUtils {
         try (Stream<Path> fStream = Files.walk(dir)) {
             if (allowEmptyDir) {
                 // 递归检查是否没有任何文件
-                return !fStream.filter(p -> !Files.isDirectory(p)).findFirst().isPresent();
+                return fStream.allMatch(p -> !Files.isDirectory(p));
             } else {
                 // 递归检查是否没有条目
-                return !fStream.filter(p -> !p.equals(dir)).findFirst().isPresent(); 
+                return fStream.allMatch(p -> !p.equals(dir)); 
             }
         }
     }
@@ -561,5 +578,129 @@ public class FileUtils {
      */
     public static boolean isFile(Path path) {
         return Files.exists(path) && !Files.isDirectory(path);
+    }
+    
+    /**
+     * 通过抛特定异常来传递无法解析文件名的信息
+     * 
+     * <p>需要能做到，即使不是相邻的文件，也能够比较大小
+     * 
+     * - 模仿windows的排序逻辑：
+     * <li>1. 移除相同的非数字前缀
+     * <li>2. 若发现非数字不同，直接比较该字符（注意文件名后缀也会参与比较）
+     * <li>3. 若存在数字，找出完整数字
+     * <li>3.1. 若完整数字相同，移除后继续循环
+     * <li>3.2. 若完整数字不同，比较数字
+     * @author wzh
+     * @since 2020.09.06
+     */
+    public static class FileNameComparator implements Comparator<String> {
+        
+        @Override
+        public int compare(String fullName1, String fullName2) {
+            if (StringUtils.isEmpty(fullName1) || StringUtils.isEmpty(fullName2)) {
+                log.warn("比较参数不能为空");
+                throw new CantCompareException();
+            }
+            
+            String name1 = fullName1; 
+            String name2 = fullName2;// 换好写的变量名...
+                
+            int i = 0;
+            int minLen = Math.min(name1.length(), name2.length());
+            char[] chars1 = name1.toCharArray();
+            char[] chars2 = name2.toCharArray();
+
+            for (; i < minLen; i++) {
+                char c1 = name1.charAt(i);
+                char c2 = name2.charAt(i);
+                boolean isNumber1 = isNumber(c1); 
+                boolean isNumber2 = isNumber(c2);
+                if (!isNumber1 || !isNumber2) {
+                    // 两个字符不全是数字
+                    if (c1 == c2) {
+                       // 1. 两个字符不全是数字，且相同；忽视该字符，继续遍历下一个字符
+                        continue;
+                    } else {
+                        // 2. 两个字符不全是数字，且不同；则这两个字符的顺序就是文件名顺序
+                        return c1 - c2;
+                    }
+                } else {
+                    // 3. 两个字符均为数字，可能相同也可能不同，需要找出两个连续数字
+                    // 找出完整数字；i = 数字开始下标
+                    String number1 = getSerialNumberBeginAt(chars1, i);
+                    String number2 = getSerialNumberBeginAt(chars2, i);
+                    if (number1.equals(number2)) {
+                        // 3.1. 数字字符串相同，无视即可
+                        i += number1.length() - 1;// 使i指向最后一个连续数字，-1是因为i本身就占了1
+                        continue;
+                    } else {
+                        // 3.2. 字符串不同，转化为数字后比较
+                        return Integer.parseInt(number1) - Integer.parseInt(number2);
+                    }
+                }
+            }
+            // 走到这一步的唯一可能是文件名完全相同
+            log.warn("无法排序：{}-{}，遍历下标={}", fullName1, fullName2, i);
+            throw new CantCompareException();
+        }
+        
+        /** 判断字符是否为数字 */
+        private boolean isNumber(char c) {
+            switch(c) {
+            case '0': case '1':case '2':case '3':case '4':case '5':case '6':case '7':case '8':case '9': return true;
+            default: return false;
+            }
+        }
+        
+        /**
+         * 从指定下标开始，获取连续数字字符串
+         * 
+         * @param str
+         * @param beginIndex 必须小于chars.length，否则将返回空字符串
+         * @author DragonBoom
+         * @since 2020.09.12
+         */
+        private String getSerialNumberBeginAt(char[] chars, int beginIndex) {
+            // 只遍历数字，获取最后一个数字的下标
+            StringBuilder sb = new StringBuilder();
+            int i = beginIndex;
+            while (i < chars.length) {
+                char c = chars[i];
+                if (isNumber(c)) {
+                    sb.append(c);
+                    i++;
+                } else {
+                    break;
+                }
+            }
+            return sb.toString();
+        }
+        
+        /** 抛出该异常表示无法比较 */
+        public static class CantCompareException extends RuntimeException {
+            private static final long serialVersionUID = 1L;
+        }
+    }
+    
+    /**
+     * 读取格式为utf-8-bom的文件。BOM的作用为标记unicode的格式（判断是utf-16还是utf-8），无法用Java提供的API获取该类型的文件
+     * 
+     * <p>更多可见：https://stackoverflow.com/questions/4897876/reading-utf-8-bom-marker
+     * 
+     * @param path
+     * @param options
+     * @author DragonBoom
+     * @since 2020.09.13
+     */
+    @SneakyThrows
+    public static List<String> readAllLinesForBOM(Path path, OpenOption... options) {
+        LinkedList<String> result = new LinkedList<>();
+        try(BufferedReader reader = new BufferedReader(new InputStreamReader(Files.newInputStream(path, options)))) {
+            String line = reader.readLine().replace("\uEFBBBF", "");
+            result.add(line);
+        }
+        return result;
+        
     }
 }

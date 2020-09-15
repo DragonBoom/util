@@ -1,9 +1,13 @@
 package indi.util;
 
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+
 /**
  * @author wzh
  * @since 2019.12.07
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class SystemUtils {
 
     /**

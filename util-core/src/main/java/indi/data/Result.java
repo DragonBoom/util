@@ -100,6 +100,13 @@ public class Result<T> implements Serializable {
         return function.apply(msg);
     }
 
+    /**
+     * 该类剩余方法由Lombok补充
+     * 
+     * @author wzh
+     * @since 2020.09.15
+     * @param <T>
+     */
     public static class ResultBuilder<T> {
 
         public ResultBuilder<T> error() {

@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
@@ -31,7 +32,7 @@ public class CompressionUtils {
     private static boolean enableErrorLog = true;
     
     public enum ResultTypes {
-        PasswordError, Success, Others
+        PASSWORD_ERROR, SUCCESS, OTHERS
     }
 
     /**
@@ -66,21 +67,21 @@ public class CompressionUtils {
                 }
                 // 若错误信息中包含密码二字，则视为密码错误
                 if (errorReason.contains("密码")) {
-                    return ResultTypes.PasswordError;
+                    return ResultTypes.PASSWORD_ERROR;
                 }
                 log.info("exitValue: {}", exec.exitValue());
                
-                return ResultTypes.Others;
+                return ResultTypes.OTHERS;
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new WrapperException(e);
         }
 
         if (enableLog) {
             log.info("{}", exec.getErrorStream());
             log.info("{}", IOUtils.toString(exec.getInputStream(), "gbk"));
         }
-        return ResultTypes.Success;
+        return ResultTypes.SUCCESS;
     }
 
     /**
@@ -102,13 +103,13 @@ public class CompressionUtils {
         } catch (ZipException e) {
             if (e.getMessage().contains("Password")) {
                 log.info("密码错误");
-                return ResultTypes.PasswordError;
+                return ResultTypes.PASSWORD_ERROR;
             }
             e.printStackTrace();
-            return ResultTypes.Others;
+            return ResultTypes.OTHERS;
         }
 
-        return ResultTypes.Success;
+        return ResultTypes.SUCCESS;
     }
     
     /**
@@ -162,12 +163,13 @@ public class CompressionUtils {
             if (Files.isDirectory(sourcePath, LinkOption.NOFOLLOW_LINKS)) {
                 // 若源路径是目录
                 // 找出所有文件
-                List<File> files = Files.list(sourcePath)
-                        .filter(entry -> {
-                            return !Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS);// 过滤掉文件夹
-                        })
-                        .map(Path::toFile)
-                        .collect(Collectors.toList());
+                final List<File> files;
+                try (Stream<Path> stream = Files.list(sourcePath)) {
+                    files = stream
+                            .filter(entry -> !Files.isDirectory(entry, LinkOption.NOFOLLOW_LINKS))// 过滤掉文件夹
+                            .map(Path::toFile)
+                            .collect(Collectors.toList());
+                }
                 // 转化为ArrayList
                 ArrayList<File> fileArrayList = new ArrayList<>();
                 fileArrayList.addAll(files);
@@ -182,9 +184,7 @@ public class CompressionUtils {
                 zipFile.createZipFile(sourcePath.toFile(), zipParameters);
             }
             return zipFile;
-        } catch (ZipException e) {
-            throw new WrapperException(e);
-        } catch (IOException e) {
+        } catch (ZipException | IOException e) {
             throw new WrapperException(e);
         }
     }

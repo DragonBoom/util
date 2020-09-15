@@ -1,5 +1,7 @@
 package indi.util;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,7 +22,7 @@ public class HashUtils {
      */
     public int encode(byte[] bytes) {
         int len = bytes.length;
-        int objHash = bytes.hashCode();
+        int objHash = Arrays.hashCode(bytes);
         System.out.println(objHash);
         
         // h = new String(bytes).hashCode() 

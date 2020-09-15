@@ -12,14 +12,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import indi.collection.CollectionUtils;
 import indi.exception.WrapperException;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class BeanUtils {
 
 	/**
@@ -28,6 +30,9 @@ public class BeanUtils {
 	public static final Map<String, Object> createMap(Object bean) {
 		return createMap(bean, true);
 	}
+	
+	/** 读取、写入Bean的属性时需要跳过的属性名 */
+	private static final String CLASS_PROPERTIE = "class";
 
 	/**
 	 * 将bean转化为新的Map<String, Object>
@@ -42,7 +47,7 @@ public class BeanUtils {
 		for (PropertyDescriptor propertyDescriptor : propertyDescriptors) {
 			String name = propertyDescriptor.getName();
 
-			if (name.equals("class")) {// 跳过class属性
+			if (name.equals(CLASS_PROPERTIE)) {// 跳过class属性
 				continue;
 			}
 			
@@ -79,13 +84,9 @@ public class BeanUtils {
 		
 		// 排除class属性
 		List<PropertyDescriptor> propertyDescriptors = Arrays.stream(beanInfo.getPropertyDescriptors())
-		        .filter(propertyDescriptor -> {
-		            return !"class".equals(propertyDescriptor.getName());
-		        })
+		        .filter(propertyDescriptor -> !CLASS_PROPERTIE.equals(propertyDescriptor.getName()))
 		        .collect(Collectors.toList());
-		propertyDescriptors.removeIf(propertyDescriptor -> {
-		    return "class".equals(propertyDescriptor.getName());
-		});
+		propertyDescriptors.removeIf(propertyDescriptor -> CLASS_PROPERTIE.equals(propertyDescriptor.getName()));
 		return propertyDescriptors;
 	}
 	
@@ -102,7 +103,7 @@ public class BeanUtils {
         
         try {
             return getter.invoke(bean);
-        } catch (Throwable e) {
+        } catch (Exception e) {
             throw new WrapperException("Invoke getter error in " + bean.getClass() + " for property " + 
                     propertyDescriptor.getDisplayName() + " because " +  e.getMessage());
         }
@@ -121,7 +122,7 @@ public class BeanUtils {
 	    
 	    try {
 	        return setter.invoke(bean, value);
-	    } catch (Throwable e) {
+	    } catch (Exception e) {
 	        throw new WrapperException("Invoke setter error in " + bean.getClass() + " for property " + 
 	            propertyDescriptor.getDisplayName() + " because " +  e.getMessage());
 	    }
@@ -184,7 +185,7 @@ public class BeanUtils {
 	 * <p>Spring/Apache也提供了类似的工具，但还是考虑自己实现一个更灵活的轮子
 	 */
 	public static final <T, K> CopyPropertyBuilder<T, K> copySelectedProperties(T sourceBean, K targetBean) {
-	    return new CopyPropertyBuilder<T, K>(sourceBean, targetBean);
+	    return new CopyPropertyBuilder<>(sourceBean, targetBean);
 	}
 	
 	@AllArgsConstructor
@@ -194,8 +195,11 @@ public class BeanUtils {
 	    
 	    /**
 	     * 复制属性
+	     * 
+	     * @param converter 源属性的转换函数（不论源属性是否为空都会执行）
+	     * @param sourcePredicate 校验是否需要复制源属性的函数，将在转换之后执行
 	     */
-        public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp, Function<Object, Object> converter, 
+        public CopyPropertyBuilder<T, K> copy(String sourceProp, String destProp, UnaryOperator<Object> converter, 
                 Predicate<Object> sourcePredicate) {
             PropertyDescriptor sourcePropDescriptor;
             PropertyDescriptor targetPropDescriptor;
@@ -221,11 +225,9 @@ public class BeanUtils {
             }
             
             // 校验是否需要复制
-            if (sourcePredicate != null) {
-                if (!sourcePredicate.test(value)) {
-                    // 校验不通过，不复制
-                    return this;
-                }
+            if (sourcePredicate != null && !sourcePredicate.test(value)) {
+                // 校验不通过，不复制
+                return this;
             }
 
             // 设置到目标属性

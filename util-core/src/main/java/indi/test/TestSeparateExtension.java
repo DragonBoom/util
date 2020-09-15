@@ -38,6 +38,7 @@ public class TestSeparateExtension
     public void afterTestExecution(ExtensionContext ctx) throws Exception {
         Date now = new Date();
         Date beginDate = beginDateThreadLocal.get();
+        beginDateThreadLocal.remove();
         // 计算花费时间
         long duration = now.getTime() - beginDate.getTime();
         String timeDesc = null;

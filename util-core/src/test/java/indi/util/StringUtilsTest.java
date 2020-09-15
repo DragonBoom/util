@@ -2,6 +2,7 @@ package indi.util;
 
 import java.util.ArrayList;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -30,8 +31,8 @@ class StringUtilsTest {
     
     @Test
     void isEnTest() {
-        System.out.println(StringUtils.isEnglish('f'));
-        System.out.println(StringUtils.isEnglish('和'));
+        Assertions.assertTrue(StringUtils.isEnglish('f'));
+        Assertions.assertTrue(StringUtils.isEnglish('f'));
     }
 
 }

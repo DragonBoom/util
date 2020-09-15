@@ -1,8 +1,8 @@
 package indi.data;
 
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 /**
@@ -14,10 +14,8 @@ import lombok.ToString;
  */
 public class Wrapper {
 	
-    @Getter
-    @Setter
-    @ToString
-    @Builder
+    @Data
+    @AllArgsConstructor(staticName = "of")
 	public static class FloatWrapper{
 	    private float value;
 
@@ -39,12 +37,10 @@ public class Wrapper {
 	    }
 	}
 	
-	@Getter
-	@Setter
-    @ToString
-    @Builder
+    @Data
+    @AllArgsConstructor(staticName = "of")
 	public static class DoubleWrapper{
-	    private Double value;
+	    private double value;
 	    //加法
 	    public void plus(double num) {
 	        this.value += num;
@@ -63,10 +59,8 @@ public class Wrapper {
 	    }
 	}
 	
-	@Getter
-	@Setter
-	@ToString
-	@Builder
+	@Data
+	@AllArgsConstructor(staticName = "of")
 	public static class IntWrapper {
 	    private int value;
 	    //加法
@@ -95,10 +89,8 @@ public class Wrapper {
 	    }
 	}
 	
-	@Getter
-	@Setter
-    @ToString
-    @Builder
+	@Data
+	@AllArgsConstructor(staticName = "of")
 	public static class LongWrapper{
 	    private long value;
 	    
@@ -128,10 +120,25 @@ public class Wrapper {
 	    }
 	}
 	
-	@Getter
-	@Setter
-	@ToString
-	@Builder
+    @ToString
+    @EqualsAndHashCode
+    @AllArgsConstructor(staticName = "of")
+    public static class BooleanWrapper {
+        private boolean value;
+        
+        public void setTrue() {
+            this.value = true;
+        }
+        public void setFalse() {
+            this.value = false;
+        }
+        public boolean get() {
+            return this.value;
+        }
+    }
+	
+	@Data
+	@AllArgsConstructor(staticName = "of")
 	public static class ObjectWrapper<T> {
 	    private T value;
 	}

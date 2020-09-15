@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import indi.io.FileUtils;
+import indi.io.FileUtils.FileNameComparator;
 import indi.test.TestSeparateExtension;
 
 @ExtendWith(TestSeparateExtension.class)
@@ -53,10 +54,17 @@ class FileUtilsTest {
     }
     
     @Test
+    @Disabled
     void isEmptyTset() throws IOException {
         
         Path p = Paths.get("e:", "for test");
         System.out.println(Files.walk(p).count());// 空目录为1
         System.out.println(Files.walk(p).filter(p1 -> !Files.isDirectory(p1)).findFirst().isPresent());
+    }
+    
+    @Test
+    void fileNameComparatorTest() {
+        FileNameComparator comparator = new FileUtils.FileNameComparator();
+        System.out.println(comparator.compare("a001.jpg", "b002.jpg"));// print: -1
     }
 }

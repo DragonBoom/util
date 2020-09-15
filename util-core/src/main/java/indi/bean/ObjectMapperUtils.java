@@ -5,8 +5,13 @@ import java.text.SimpleDateFormat;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ObjectMapperUtils {
     private static final ObjectMapper objectMapper = new ObjectMapper();
+    /** 以特定格式输出/输入日期（而不是默认的毫秒）的ObjectMapper */
     private static final ObjectMapper formatDateMapper = new ObjectMapper();
     
     static {
@@ -22,6 +27,13 @@ public class ObjectMapperUtils {
         return objectMapper;
     }
     
+    /**
+     *  以特定格式输出/输入日期（而不是默认的毫秒）的ObjectMapper
+     * 
+     * @return
+     * @author DragonBoom
+     * @since 2020.09.12
+     */
     public static ObjectMapper getFormatDateMapper() {
         return formatDateMapper;
     }

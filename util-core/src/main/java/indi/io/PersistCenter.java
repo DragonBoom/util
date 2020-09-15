@@ -39,6 +39,7 @@ public abstract class PersistCenter {
     
     public PersistCenter(Path homePath, Object obj, String... propertyNames) {
         this(homePath, DEFAULT_PERSIST_FILE_NAME, obj, propertyNames);
+        
     }
     
     public void persist() throws Exception {
@@ -54,6 +55,8 @@ public abstract class PersistCenter {
         Map<String, Object> oldMap = null;
         if (Files.exists(persistFilePath)) {
             oldMap = readFile();
+        } else {
+            oldMap = new HashMap<>();
         }
         writeFile(map, oldMap);
     }
@@ -105,7 +108,7 @@ public abstract class PersistCenter {
     /**
      * 从文件中获取Map结构
      * 
-     * @return
+     * @return 比不为null
      * @throws Exception
      * @author DragonBoom
      * @since 2020.09.04

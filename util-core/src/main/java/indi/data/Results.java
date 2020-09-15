@@ -32,8 +32,7 @@ public class Results {
         return fromJson(json, DEFAULT_TYPE_REFERENCE);
     }
 
-    public static <R> Result<R> fromJson(String json, TypeReference<Result<R>> typeRef)
-            throws JsonParseException, JsonMappingException, IOException {
+    public static <R> Result<R> fromJson(String json, TypeReference<Result<R>> typeRef) throws IOException {
         ObjectMapper objectMapper = ObjectMapperUtils.getMapper();
         return objectMapper.readValue(json, typeRef);
     }
@@ -42,11 +41,11 @@ public class Results {
             .put("MAP", new TypeReference<Result<Map<String, String>>>() {
             }).build();
 
-    public static enum CommonTypeRef {
+    public enum CommonTypeRef {
         /**
          * Map<\String, String>
          */
-        Map("MAP");
+        MAP("MAP");
 
         private String str;
 
@@ -63,16 +62,15 @@ public class Results {
      * 将json字符串转化为常见的Result类型<br>
      * support "MAP" -> Map<String, String>
      */
-    public static Result<?> fromCommonJson(String json, CommonTypeRef type)
-            throws JsonParseException, JsonMappingException, IOException {
+    public static <R> Result<R> fromCommonJson(String json, CommonTypeRef type) throws IOException {
         Objects.requireNonNull(type);
         TypeReference<?> typeRef = (TypeReference<?>) commonTypeRef.get(type.getStr());
         Object value = ObjectMapperUtils.getMapper().readValue(json, typeRef);
         Objects.requireNonNull(value, "不存在该类型引用");
         if (value instanceof Result) {
-            return (Result<?>) value;
+            return (Result<R>) value;
         } else {
-            return Results.success(value);
+            return Results.success((R) value);
         }
     }
     
@@ -81,7 +79,7 @@ public class Results {
      */
     
     public static <T> Result<T> fromOptional(Optional<T> optional, String msg) {
-        return optional.map(e -> Results.success(e)).orElse(Results.error(msg));
+        return optional.map(Results::success).orElse(Results.error(msg));
     }
 
     /*

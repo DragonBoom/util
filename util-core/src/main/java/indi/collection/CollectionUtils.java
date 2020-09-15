@@ -124,7 +124,7 @@ public class CollectionUtils {
         return listSameElements0(ImmutableSet.copyOf(c1), ImmutableSet.copyOf(c2), comparatorFun);
     }
     
-    public static <T> List<T> listSameElements0(ImmutableSet<T> set1, ImmutableSet<T> set2, Comparator<T> comparatorFun) {
+    private static <T> List<T> listSameElements0(ImmutableSet<T> set1, ImmutableSet<T> set2, Comparator<T> comparatorFun) {
         Set<T> result = createSet(Math.min(set1.size(), set2.size()));
         for (T s1 : set1) {
             for (T s2 : set2) {
