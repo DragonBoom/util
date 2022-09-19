@@ -6,7 +6,9 @@ package indi.io;
 import java.io.InputStream;
 import java.util.Properties;
 
+import lombok.AccessLevel;
 import lombok.Cleanup;
+import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -17,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 2020.09.07
  */
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ClassPathProperties {
 
     /**

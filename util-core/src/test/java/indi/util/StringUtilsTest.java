@@ -30,9 +30,36 @@ class StringUtilsTest {
     }
     
     @Test
+//    @Disabled
     void isEnTest() {
         Assertions.assertTrue(StringUtils.isEnglish('f'));
         Assertions.assertTrue(StringUtils.isEnglish('f'));
+        Assertions.assertTrue(StringUtils.isEnglish('F'));
+        Assertions.assertTrue(StringUtils.isEnglish('a'));
+        Assertions.assertTrue(StringUtils.isEnglish('A'));
+        Assertions.assertTrue(StringUtils.isEnglish('z'));
+        Assertions.assertTrue(StringUtils.isEnglish('Z'));
+    }
+    
+    @Test
+//    @Disabled
+    void removeUselessSpace() {
+        String result = StringUtils.removeUselessSpace("a  f [ f ] ");
+        Assertions.assertEquals("a f [f]", result);
+    }
+    
+    @Test
+    void checkNestedBrackets() {
+        boolean result = StringUtils.checkNestedBrackets("[a(bc)c]", '[', ']');
+        Assertions.assertFalse(result);
+        Assertions.assertTrue(StringUtils.checkNestedBrackets("[a[bc]c]", '[', ']'));
+    }
+    
+    @Test
+    void toHalfSymbolsTest() {
+        String source = "（符号）";
+        String r = StringUtils.toHalfSymbols(source);
+        System.out.println(r);
     }
 
 }

@@ -28,7 +28,7 @@ public class WrapperException extends RuntimeException {
     }
 
     /**
-     * 将打印异常栈信息
+     * 将对异常栈信息记录日志
      * 
      * @param throwable
      */
@@ -39,14 +39,14 @@ public class WrapperException extends RuntimeException {
     }
 
     /**
-     * 将打印异常栈信息
+     * 将对异常栈信息记录日志
      * 
      * @param msg
      * @param throwable
      */
     public WrapperException(String msg, Throwable throwable) {
         super(msg, throwable);
-        throwable.printStackTrace();
+//        throwable.printStackTrace();
         init(msg);
     }
 }

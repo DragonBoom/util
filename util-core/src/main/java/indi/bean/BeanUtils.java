@@ -6,6 +6,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -18,11 +19,17 @@ import java.util.stream.Collectors;
 
 import indi.collection.CollectionUtils;
 import indi.exception.WrapperException;
+import indi.util.StringUtils;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class BeanUtils {
+    static final String ADD_PREFIX = "add";
+    static final String REMOVE_PREFIX = "remove";
+    static final String GET_PREFIX = "get";
+    static final String SET_PREFIX = "set";
+    static final String IS_PREFIX = "is";
 
 	/**
 	 * 将bean转化为新的Map<String, Object>。值为null的属性将被忽略。
@@ -139,7 +146,7 @@ public class BeanUtils {
             CollectionUtils
                     .collectMap(sourcePDs, targetPDs, (sourcePD, targetPD) -> {
                         String name = sourcePD.getName();
-                        return Arrays.binarySearch(ignoreProperties, name) >= 0 && name.equals(targetPD.getName());
+                        return Arrays.binarySearch(ignoreProperties, name) < 0 && name.equals(targetPD.getName());
                     })
                     .forEach((sourcePD, targetPD) -> {
                         Object value = invokeGetter(sourcePD, sourceBean);
@@ -159,10 +166,20 @@ public class BeanUtils {
 	 */
 	public static PropertyDescriptor getFullPropertyDescriptor(Class<?> classes, String propertyName) {
 	    try {
-            return new PropertyDescriptor(propertyName, classes, 
-                    "is" + capitalize(propertyName),// 根据源码：这里若用is前缀，则当找不到该方法时还会尝试获取一次get前缀的方法 ovO
-                    "set" +  capitalize(propertyName));
-        } catch (IntrospectionException e) {
+	        Field field = classes.getDeclaredField(propertyName);
+	        Class<?> declaringClass = field.getType();
+	        // 主动判断是否为boolean，确保异常信息不会出错
+	        // 可用该方法创建实例：PropertyDescriptor(String, Class<?>)
+	        if (declaringClass == Boolean.TYPE) {
+	            return new PropertyDescriptor(propertyName, classes, 
+	                    IS_PREFIX + capitalize(propertyName),// 根据源码：这里若用is前缀，则当找不到该方法时还会尝试获取一次get前缀的方法 ovO
+	                    SET_PREFIX +  capitalize(propertyName));
+	        } else {
+	            return new PropertyDescriptor(propertyName, classes, 
+	                    GET_PREFIX + capitalize(propertyName),
+	                    SET_PREFIX +  capitalize(propertyName));
+	        }
+        } catch (IntrospectionException | NoSuchFieldException | SecurityException e) {
             throw new WrapperException(e);
         }
 	}
@@ -173,7 +190,7 @@ public class BeanUtils {
 	 * @param name bean的属性
 	 */
 	private static String capitalize(String name) {
-        if (name == null || name.length() == 0) {
+        if (StringUtils.isEmpty(name)) {
             return name;
         }
         return name.substring(0, 1).toUpperCase(ENGLISH) + name.substring(1);
@@ -324,6 +341,25 @@ public class BeanUtils {
 	    PropertyDescriptor propertyDescriptor = BeanUtils.getFullPropertyDescriptor(obj.getClass(), propertyName);
 	    BeanUtils.invokeSetter(propertyDescriptor, obj, value);
 	}
+	
+	/**
+	 * 克隆bean的属性到新对象
+	 * 
+	 * @param <T>
+	 * @param source
+	 * @param ignoreProperties
+	 * @return
+	 * @since 2021.03.31
+	 */
+	public static <T> T clone(T source, String... ignoreProperties) {
+	    try {
+            T dest = (T) source.getClass().newInstance();
+            copyProperties(source, dest, ignoreProperties);
+            return dest;
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new WrapperException(e);
+        }
+	} 
 	
 	
 }

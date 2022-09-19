@@ -8,6 +8,8 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import indi.exception.ExceptionUtils;
+
 /**
  * 用@ExtendWith引入该插件以为每个单元测试添加分隔符
  * 
@@ -39,6 +41,9 @@ public class TestSeparateExtension
         Date now = new Date();
         Date beginDate = beginDateThreadLocal.get();
         beginDateThreadLocal.remove();
+        
+        // 打印异常信息
+        ctx.getExecutionException().ifPresent(e -> System.err.println(ExceptionUtils.stringify(e, 5, null)));
         // 计算花费时间
         long duration = now.getTime() - beginDate.getTime();
         String timeDesc = null;

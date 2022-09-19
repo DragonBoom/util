@@ -2,6 +2,8 @@ package indi.exception;
 
 import java.util.Optional;
 
+import javax.annotation.Nullable;
+
 import indi.data.Result;
 import indi.data.Results;
 import indi.directory.CommonExceptionDictionary;
@@ -47,7 +49,7 @@ public class ExceptionUtils {
      * @param keyword 用于匹配完整类名（包名+类名）的关键字；可为空，为空时直接取最新一条栈记录
      * @return
      */
-    public static String stringify(Exception e, int maxDepth, String keyword) {
+    public static String stringify(Throwable e, int maxDepth, String keyword) {
         return stringify0(e, 0, maxDepth, keyword);
     }
     
@@ -57,10 +59,10 @@ public class ExceptionUtils {
      * @param e
      * @param depth
      * @param maxDepth
-     * @param keyword
+     * @param keyword 可为空
      * @return
      */
-    private static String stringify0(Exception e, int depth, int maxDepth, String keyword) {
+    private static String stringify0(Throwable e, int depth, int maxDepth, @Nullable String keyword) {
         Throwable cause = e.getCause();
         String causeStr = null;
         if (cause != null && depth < maxDepth) {
@@ -77,7 +79,7 @@ public class ExceptionUtils {
      * @param keyword 用于匹配完整类名（包名+类名）的关键字；可为空，为空时直接取最新一条栈记录
      * @return 
      */
-    private static String stringifyExceptionByStackTrace(Exception e, String keyword) {
+    private static String stringifyExceptionByStackTrace(Throwable e, @Nullable String keyword) {
         if (e == null) {
             return null;
         }
@@ -93,12 +95,13 @@ public class ExceptionUtils {
                 String fileName = ste.getFileName();
                 if (className != null && className.contains(keyword) && 
                         !"<generated>".equals(fileName)) {// 跳过文件名、行数无法识别的类（主要是代理）。。
-                    return e.getMessage() + ":" + fileName + ":" + ste.getLineNumber();// 这里少打印了完整类路径与方法名
+                    // 这里少了完整类路径与方法名
+                    return e.getMessage() + "(" + ste.getFileName() + ":" + ste.getLineNumber() + ")";
                 }
             }
         }
         // 取最新一条记录
         StackTraceElement ste = stackTrace[0];// 获取栈最外一个元素，即最新一条栈记录
-        return e.getMessage() + ":" + ste.getFileName() + ":" + ste.getLineNumber();
+        return e.getMessage() + "(" + ste.getFileName() + ":" + ste.getLineNumber() + ")";// 该格式能被IDE解析成链接
     }
 }

@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 
@@ -105,39 +104,59 @@ public class CollectionUtils {
     }
     
     /**
-     * 列出所有相同元素
+     * 通过给定比较方式找出两集合间相同的元素；只返回来自第一个集合的元素；若第一个集合中有多个元素符合条件，均会返回；
+     * 返回集合中元素顺序与第一个集合相同
      * 
      * @param comparatorFun nullable
-     * @return 不是不可修改的列表，不包含重复元素
+     * @return 来自第一个集合
+     */
+    public static <T> List<T> listSameElements(Collection<T> c1, Collection<T> c2, @Nullable Comparator<T> comparator) {
+        return listSameElements0(c1, c2, comparator);
+    }
+    
+    /**
+     * 通过给定比较方式找出两集合间相同的元素；只返回来自第一个集合的元素；若第一个集合中有多个元素符合条件，均会返回；
+     * 返回集合中元素顺序与第一个集合相同
+     * 
+     * @param comparatorFun nullable
+     * @return 来自第一个集合
      */
     public static <T> List<T> listSameElements(T[] a1, T[] a2, @Nullable Comparator<T> comparatorFun) {
         return listSameElements0(ImmutableSet.copyOf(a1), ImmutableSet.copyOf(a2), comparatorFun);
     }
-
-    /**
-     * 列出所有相同元素
-     * 
-     * @param comparatorFun nullable
-     * @return 不是不可修改的列表，不包含重复元素
-     */
-    public static <T> List<T> listSameElements(Collection<T> c1, Collection<T> c2, @Nullable Comparator<T> comparatorFun) {
-        return listSameElements0(ImmutableSet.copyOf(c1), ImmutableSet.copyOf(c2), comparatorFun);
-    }
     
-    private static <T> List<T> listSameElements0(ImmutableSet<T> set1, ImmutableSet<T> set2, Comparator<T> comparatorFun) {
+    private static <T> List<T> listSameElements0(Collection<T> set1, Collection<T> set2, Comparator<T> comparator) {
         Set<T> result = createSet(Math.min(set1.size(), set2.size()));
+        // 简单地用for-for循环实现
         for (T s1 : set1) {
             for (T s2 : set2) {
-                boolean isEqual = Optional.ofNullable(comparatorFun)
-                        .map(fun -> fun.compare(s1, s2) == 0)// means equal
-                        .orElse(s1 != null && s1.equals(s2));
-
-                if (isEqual) {
+                if (comparator != null) {
+                    if (comparator.compare(s1, s2) == 0) {
+                        result.add(s1);
+                    }
+                } else if (s1 == s2 || (s1 != null && s1.equals(s2))) {
                     result.add(s1);
                 }
             }
         }
         return Lists.newArrayList(result);
+    }
+    
+    public static <T> boolean haveSameElements(Collection<T> set1, Collection<T> set2, @Nullable Comparator<T> comparator) {
+        // 简单地用for-for循环实现
+//        return set1.stream().anyMatch(set2::contains);
+        for (T s1 : set1) {
+            for (T s2 : set2) {
+                if (comparator != null) {
+                    if (comparator.compare(s1, s2) == 0) {
+                        return true;
+                    }
+                } else if (s1 == s2 || (s1 != null && s1.equals(s2))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
     
     /**
@@ -153,5 +172,30 @@ public class CollectionUtils {
             throw new IllegalArgumentException("集合不是只有一个元素, size=" + size);
         }
         return list.get(0);
+    }
+    
+    /** 判断给定Map的元素是否均为空（有null元素的不视为空） */
+    public static boolean isEmpty(Map<?, ?>... maps) {
+        for (Map<?, ?> map : maps) {
+            if (map != null && !map.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /** 判断给定集合的元素是否均为空（有null元素的不视为空） */
+    public static boolean isEmpty(Collection<?>... cs) {
+        for (Collection<?> c : cs) {
+            if (c != null && !c.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /** 判断给定数组是否均为空（有null元素的不视为空） */
+    public static <T> boolean isEmpty(T[] f) {
+        return f == null || f.length == 0;
     }
 }

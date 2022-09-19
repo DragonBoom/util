@@ -13,6 +13,8 @@ public class ArrayUtils {
     /**
      * 类似Arrays.copyOf(source, newLength)，裁剪或扩充数组，在其基础上增加了指定填充值的功能
      * 
+     * <p>复制指定的数组，截断或填充NULL（如有必要），以使副本具有指定的长度。
+     * 
      * @param <T>
      * @param source
      * @param newLength

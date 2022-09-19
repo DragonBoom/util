@@ -1,12 +1,18 @@
 package indi.util;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -102,6 +108,73 @@ public class ReflectUtils {
             return packageName;
         }
         throw new RuntimeException2(new StringBuilder("包名格式错误:").append(packageName).toString());
+    }
+    
+    /**
+     * 获取上级调用者
+     * 
+     * @param depth 所需获取堆栈信息的深度，0为本方法中Thread.getStackTrace()的信息，
+     * 1为获取对本方法的调用的信息，2为对本方法调用的调用的信息（常用）
+     * @return
+     * @author DragonBoom
+     * @since 2020.09.15
+     */
+    public static StackTraceElement getCallerStackTrace(int depth) {
+        StackTraceElement[] stackTrace = Thread.currentThread().getStackTrace();
+        for (int i = 0; i < stackTrace.length; i++) {
+            if (ReflectUtils.class.getName().equals(stackTrace[i].getClassName())) {
+                return stackTrace[i + depth];
+            }
+        }
+        throw new IllegalArgumentException("Stack Trace Not Found By Depth : " + depth);
+    }
+    
+    /**
+     * 获取调用本方法的方法的调用方法的信息: 目标 -> X -> 本方法
+     * 
+     * <p>需要注意的是，有时调用信息会出现不存在的方法，如：
+<li>indi.tool.comic.ComicFolderForamtter.logIfDifferent(ComicFolderForamtter.java:474)
+<li>indi.tool.comic.ComicFolderForamtter.access$3(ComicFolderForamtter.java:471)
+<li>indi.tool.comic.ComicFolderForamtter$ComicFolderNameFormatVisitor.formatBracket(ComicFolderForamtter.java:638)
+     * 
+     * <p>中间的access方法并不存在，指定行是方法的声明行。目前尚不清楚是什么情况，也无法在其他地方复现。暂时用一个参数来跳过
+     * 该行
+     * @param depth nullable
+     * 
+     * @return 形如 ComicFolderForamtter.java:480
+     * @author DragonBoom
+     * @since 2020.09.15
+     */
+    public static String getCallerMethodInfo(Integer depth) {
+        StackTraceElement ste = getCallerStackTrace(Optional.ofNullable(depth).orElse(3));
+        // 模仿StackTraceElement.toString()
+        String fileName = ste.getFileName();
+        int lineNumber = ste.getLineNumber();
+        return ste.isNativeMethod() ? "(Native Method)"
+                : (fileName != null && ste.getLineNumber() >= 0 ? "(" + fileName + ":" + lineNumber + ")"
+                        : (fileName != null ? "(" + fileName + ")" : "(Unknown Source)"));
+    }
+    
+    /** only for debug */
+    public static void printStack() {
+        Arrays.asList(Thread.currentThread().getStackTrace()).forEach(s -> System.out.println(s.toString()));
+    }
+    
+    /**
+     * 获取具有指定注解的值域
+     * 
+     * @return
+     * @since 2021.02.03
+     */
+    public static List<Field> listFieldAnnotations(Class<?> targetClass, Class<? extends Annotation> annotationClass) {
+        LinkedList<Field> result = new LinkedList<>();
+        Field[] fields = targetClass.getDeclaredFields();
+        for (Field field : fields) {
+            if (field.isAnnotationPresent(annotationClass)) {
+                result.add(field);
+            }
+        }
+        return result;
     }
     
 }

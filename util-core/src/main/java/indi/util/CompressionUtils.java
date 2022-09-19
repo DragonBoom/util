@@ -14,9 +14,9 @@ import java.util.stream.Stream;
 
 import javax.annotation.Nullable;
 
+import indi.data.Three;
 import indi.exception.WrapperException;
-import indi.io.IOUtils;
-import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import net.lingala.zip4j.core.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
@@ -26,10 +26,6 @@ import net.lingala.zip4j.util.Zip4jConstants;
 
 @Slf4j
 public class CompressionUtils {
-    @Setter
-    private static boolean enableLog = false;
-    @Setter
-    private static boolean enableErrorLog = true;
     
     public enum ResultTypes {
         PASSWORD_ERROR, SUCCESS, OTHERS
@@ -41,47 +37,23 @@ public class CompressionUtils {
      * @param sourcePath
      * @param destPath
      * @param password
-     * @return
+     * @return 只判断解压是否成功
      */
+    @SneakyThrows
     public static final ResultTypes unpackRar(String sourcePath, String destPath, String password) {
         // check
-        StringBuilder sb = new StringBuilder("rar")
-                .append(" x")
-                .append(" -p").append(password)
-                .append(" -o-") // 覆盖已存在项目
-                .append(" -isnd") // 禁用声音
-                .append(" \"").append(sourcePath).append("\" \"").append(destPath).append("\""); // 设置路径
+        StringBuilder sb = new StringBuilder("rar ")
+                .append("x ")
+                .append("-o- ") // 覆盖已存在项目
+                .append("-isnd ") // 禁用声音
+                .append("\"").append(sourcePath).append("\" \"").append(destPath).append("\" "); // 设置路径
+        if (!StringUtils.isEmpty(password)) {
+            sb.append("-p").append(password).append(" ");
+        }
         log.debug("Process command: {}", sb);
-        Process exec = null;
-        try {
-            exec = Runtime.getRuntime().exec(sb.toString());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        // 若解压出错，处理错误信息流
-        try {
-            if (exec.getErrorStream().read() != -1) {
-                String errorReason = IOUtils.toString(exec.getErrorStream(), "gbk");
-                if (enableErrorLog) {
-                    log.error(errorReason);
-                }
-                // 若错误信息中包含密码二字，则视为密码错误
-                if (errorReason.contains("密码")) {
-                    return ResultTypes.PASSWORD_ERROR;
-                }
-                log.info("exitValue: {}", exec.exitValue());
-               
-                return ResultTypes.OTHERS;
-            }
-        } catch (IOException e) {
-            throw new WrapperException(e);
-        }
-
-        if (enableLog) {
-            log.info("{}", exec.getErrorStream());
-            log.info("{}", IOUtils.toString(exec.getInputStream(), "gbk"));
-        }
-        return ResultTypes.SUCCESS;
+        Three<String, String, Integer> result = ProcessUtils.process(sb.toString());
+        Integer exitValue = result.getThird();
+        return exitValue == 0 ? ResultTypes.SUCCESS : ResultTypes.OTHERS;
     }
 
     /**

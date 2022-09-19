@@ -3,7 +3,6 @@ package indi.data;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.ToString;
 
 /**
  * 本类用于为无法修改值的类型，提供间接修改值的封装；主要用于变量不能修改的场景，如函数内外传值
@@ -87,6 +86,10 @@ public class Wrapper {
 	    public void divide(int num) {
 	        this.value /= num;
 	    }
+	    //取模
+	    public void mod(int num) {
+	        this.value %= num;
+	    }
 	}
 	
 	@Data
@@ -120,7 +123,8 @@ public class Wrapper {
 	    }
 	}
 	
-    @ToString
+	   
+    @Data
     @EqualsAndHashCode
     @AllArgsConstructor(staticName = "of")
     public static class BooleanWrapper {
@@ -133,6 +137,23 @@ public class Wrapper {
             this.value = false;
         }
         public boolean get() {
+            return this.value;
+        }
+    }
+	
+	@Data
+    @EqualsAndHashCode
+    @AllArgsConstructor(staticName = "of")
+    public static class NullableBooleanWrapper {
+        private Boolean value;// 2022.04.03 用Boolean而不是Boolean，使得可以设为null来表示未知
+        
+        public void setTrue() {
+            this.value = Boolean.TRUE;
+        }
+        public void setFalse() {
+            this.value = Boolean.FALSE;
+        }
+        public Boolean get() {
             return this.value;
         }
     }

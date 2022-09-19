@@ -13,9 +13,8 @@ import indi.exception.RuntimeException2;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -25,8 +24,7 @@ import lombok.ToString;
  * @since 2019.12.19
  * @param <T>
  */
-@Getter
-@Setter
+@Data
 @ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
