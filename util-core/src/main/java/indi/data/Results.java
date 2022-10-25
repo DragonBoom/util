@@ -86,6 +86,18 @@ public class Results {
      * 下面部分为用于创建新的实例的静态方法
      */
 
+    /**
+     * 本方法要不就返回success，不要就抛异常
+     *
+     * @param fun
+     * @param <T>
+     * @return
+     */
+    public static <T> Result<T> run(Runnable fun) {
+        fun.run();
+        return Results.success();
+    }
+
     public static <T> Result<T> success() {
         return Result.<T>builder().build();
     }
