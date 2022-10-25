@@ -87,6 +87,13 @@ public class Result<T> implements Serializable {
         return this;
     }
 
+    public Result<T> run(Runnable function) {
+        if (!isError()) {
+            function.run();
+        }
+        return this;
+    }
+
     /**
      * eat content。类似于map，但返回的是Result的内容，而不是Result
      */
