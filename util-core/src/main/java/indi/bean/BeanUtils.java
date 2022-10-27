@@ -144,6 +144,7 @@ public class BeanUtils {
             PropertyDescriptor[] targetPDs = targetBeanInfo.getPropertyDescriptors();
             
             CollectionUtils
+                    // 建立映射
                     .collectMap(sourcePDs, targetPDs, (sourcePD, targetPD) -> {
                         String name = sourcePD.getName();
                         return Arrays.binarySearch(ignoreProperties, name) < 0 && name.equals(targetPD.getName());

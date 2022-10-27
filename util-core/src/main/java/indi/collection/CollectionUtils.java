@@ -78,6 +78,8 @@ public class CollectionUtils {
     
     /**
      * 将两个数组转化为Map
+     * 
+     * @param fun 传入参数1的元素、参数2的元素，当返回true时，建立 参数1的元素->参数2的元素 的映射
      */
     public static <T, K> Map<T, K> collectMap(T[] a1, K[] a2, BiFunction<T, K, Boolean> fun) {
         return collectMap(ImmutableSet.copyOf(a1), ImmutableSet.copyOf(a2), fun);
@@ -85,10 +87,12 @@ public class CollectionUtils {
     
     /**
      * 将两个集合转化为Map
+     * 
+     * @param fun 传入参数1的元素、参数2的元素，当返回true时，建立 参数1的元素->参数2的元素 的映射
      */
     public static <T, K> Map<T, K> collectMap(ImmutableSet<T> set1, ImmutableSet<K> set2, BiFunction<T, K, Boolean> fun) {
         Map<T, K> result = createMap();
-        int[] records = new int[set2.size()];
+        int[] records = new int[set2.size()];// 用于标记set2中哪个元素已建立映射
         for (T t : set1) {
             int i = 0;
             for (K k : set2) {

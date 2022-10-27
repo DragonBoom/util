@@ -27,12 +27,11 @@ public class TestSeparateExtension
     public void beforeTestExecution(ExtensionContext ctx) throws Exception {
         beginDateThreadLocal.set(new Date());
   
-        String displayName = ctx.getDisplayName();
-        Class<?> requiredTestClass = ctx.getRequiredTestClass();
         
+        System.out.println();// (2022.10.02) 空一行
         System.out.println(new StringBuilder(SEPARATOR)
                 .append("Begin Test: ")
-                .append(requiredTestClass.getSimpleName()).append(".").append(displayName)
+                .append(ctx.getRequiredTestClass().getSimpleName()).append(".").append(ctx.getDisplayName())
                 .toString());
     }
 
@@ -52,7 +51,10 @@ public class TestSeparateExtension
         } else {
             timeDesc = new StringBuilder().append(duration).append(" millis").toString();
         }
-        System.out.println(new StringBuilder(SEPARATOR).append(" Test Over, Use ").append(timeDesc).toString());
+        System.out.println(new StringBuilder(SEPARATOR)
+                // (2022.10.02)结束时也加上测试方法的信息，便于查看
+                .append(ctx.getRequiredTestClass().getSimpleName()).append(".").append(ctx.getDisplayName())
+                .append(" Test Over, Use ").append(timeDesc).toString());
         System.out.println();// 空一行
     }
     
