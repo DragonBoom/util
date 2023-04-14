@@ -52,7 +52,7 @@
 		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
-			<version>20180130</version>
+			<version>20230227</version>
 		</dependency>
 		<!-- log相关，主要需要以下依赖 -->
 		<dependency>
